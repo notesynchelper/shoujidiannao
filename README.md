@@ -57,5 +57,5 @@ npm run build      # 产出 main.js
 ## About
 
 It pairs new devices with a one-time dynamic code, connects through the
-nearest data center in mainland China, and encrypts every note end-to-end —
-so only you ever hold the keys to your own notes.
+nearest data center in mainland China, and encrypts every note end-to-end
+so only you hold the keys.
