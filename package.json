@@ -1,7 +1,7 @@
 {
   "name": "shoujidiannao",
-  "version": "0.0.1",
-  "description": "在手机和电脑之间安全、快速地同步笔记",
+  "version": "0.0.2",
+  "description": "Sync notes between phone and computer with end-to-end encryption",
   "main": "main.js",
   "scripts": {
     "build": "node esbuild.config.mjs",
