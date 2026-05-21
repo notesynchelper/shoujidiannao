@@ -16,9 +16,9 @@
   "author": "notesynchelper",
   "license": "MIT",
   "dependencies": {
-    "@noble/curves": "^1.6.0",
-    "diff-match-patch": "^1.0.5",
-    "ws": "^8.18.0"
+    "@noble/curves": "1.9.7",
+    "diff-match-patch": "1.0.5",
+    "ws": "8.20.0"
   },
   "devDependencies": {
     "@types/diff-match-patch": "^1.0.36",
