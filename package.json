@@ -1,6 +1,6 @@
 {
   "name": "shoujidiannao",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Sync notes between phone and computer with end-to-end encryption",
   "main": "main.js",
   "scripts": {
