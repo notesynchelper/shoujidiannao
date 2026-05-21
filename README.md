@@ -1,5 +1,9 @@
 # Shouji Diannao
 
+Shouji Diannao is an Obsidian plugin that synchronizes your notes between phone and computer.
+
+---
+
 我们新做了一个 Obsidian 手机电脑同步插件 —— **方便、快速、安全**。
 
 让你的笔记在手机和电脑之间实时保持一致，不依赖第三方网盘，不需要复杂配置。
@@ -47,3 +51,11 @@ npm run build      # 产出 main.js
 ## 许可证
 
 [MIT](./LICENSE)
+
+---
+
+## About
+
+It pairs new devices with a one-time dynamic code, connects through the
+nearest data center in mainland China, and encrypts every note end-to-end —
+so only you ever hold the keys to your own notes.
