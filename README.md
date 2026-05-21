@@ -52,7 +52,7 @@ Copy the build output `main.js` together with `manifest.json` into
 ## Compatibility
 
 - Requires Obsidian `1.4.0` or higher.
-- In the current version (0.0.2), the encryption module depends on the desktop
+- In the current version (0.0.3), the encryption module depends on the desktop
   runtime, so desktop Obsidian is recommended. Full mobile support will arrive
   in a later version.
 
