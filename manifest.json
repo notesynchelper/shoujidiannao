@@ -3,7 +3,7 @@
   "name": "Shouji Diannao",
   "version": "0.0.1",
   "minAppVersion": "1.4.0",
-  "description": "Obsidian 手机电脑笔记同步插件：动态码绑定，大陆多机房就近接入，端到端加密。",
+  "description": "在手机和电脑之间安全、快速地同步笔记：动态码绑定，大陆多机房就近接入，端到端加密.",
   "author": "notesynchelper",
   "authorUrl": "https://github.com/notesynchelper",
   "isDesktopOnly": false

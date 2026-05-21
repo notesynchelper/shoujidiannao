@@ -1,7 +1,7 @@
 {
   "name": "shoujidiannao",
   "version": "0.0.1",
-  "description": "Obsidian 手机电脑笔记同步插件",
+  "description": "在手机和电脑之间安全、快速地同步笔记",
   "main": "main.js",
   "scripts": {
     "build": "node esbuild.config.mjs",
