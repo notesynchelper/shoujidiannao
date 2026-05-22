@@ -1,7 +1,7 @@
 {
   "id": "shoujidiannao",
   "name": "Shouji Diannao",
-  "version": "0.0.5",
+  "version": "0.1.4",
   "minAppVersion": "1.4.0",
   "description": "Sync notes between phone and computer with one-time dynamic-code device pairing, nearest-data-center routing in mainland China, and end-to-end encryption.",
   "author": "notesynchelper",
