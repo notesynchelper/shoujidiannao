@@ -19,8 +19,9 @@
  *   - analysis/desktop/app.readable.js:L46347-L46609
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { cbc, ctr, gcm } from '@noble/ciphers/aes';
+import { sha256 } from '@noble/hashes/sha2';
+import { randomBytes } from '@noble/hashes/utils';
 import { constantTimeEqual, utf8Encode, utf8Decode, bytesToHex, hexToBytes, zeroOut } from './utils.js';
 import type { SivKeySet } from './types.js';
 
@@ -31,48 +32,27 @@ const R_POLY = 0x87; // GF(2^128) reduction polynomial constant — RFC 5297 §2
 //  AES single-block ECB encryption (the building block for CMAC).
 //
 //  RFC 4493 / 5297 are defined in terms of "AES single block encrypt".
-//  In Node we get that by AES-CBC with an all-zero IV, single block of
-//  input, then taking the first 16 bytes of the output. We need to
-//  disable PKCS#7 padding by setting `setAutoPadding(false)` so the
-//  cipher actually emits exactly 16 bytes for a 16-byte input.
+//  AES-CBC with an all-zero IV over exactly ONE block of input, with
+//  PKCS#7 padding disabled, degenerates to a single-block ECB encrypt.
+//  `@noble/ciphers` `cbc` is pure JS (mobile-safe) and byte-identical
+//  to Node's `aes-{128,192,256}-cbc`; the key length selects AES-128/
+//  192/256 automatically.
 // =====================================================================
+
+function assertAesKeyLen(keyLen: number): void {
+  if (keyLen !== 16 && keyLen !== 24 && keyLen !== 32) {
+    throw new Error(`AES key length must be 16/24/32 bytes, got ${keyLen}`);
+  }
+}
 
 function aesEcbBlock(key: Uint8Array, block: Uint8Array): Uint8Array {
   if (block.byteLength !== BLOCK_SIZE) {
     throw new Error('aesEcbBlock: block must be exactly 16 bytes');
   }
-  // Pick the cipher name based on key length (16/24/32 → 128/192/256).
-  const alg = pickAesCbcAlg(key.byteLength);
-  const iv = new Uint8Array(BLOCK_SIZE); // all-zero IV → AES-CBC degenerates
-  // to a single-block ECB encrypt for one block of input.
-  const cipher = createCipheriv(alg, key, iv);
-  cipher.setAutoPadding(false);
-  const out1 = cipher.update(block);
-  const out2 = cipher.final();
-  // With setAutoPadding(false) and exactly one input block, update()
-  // emits the 16 ciphertext bytes and final() emits 0 bytes.
-  if (out1.byteLength + out2.byteLength !== BLOCK_SIZE) {
-    throw new Error('aesEcbBlock: unexpected output length');
-  }
-  const out = new Uint8Array(BLOCK_SIZE);
-  // Buffer's underlying ArrayBufferLike is incompatible with Uint8Array's
-  // generic in TS 5.x strict mode — wrap via Uint8Array.from to coerce.
-  out.set(Uint8Array.from(out1), 0);
-  out.set(Uint8Array.from(out2), out1.byteLength);
-  return out;
-}
-
-function pickAesCbcAlg(keyLen: number): 'aes-128-cbc' | 'aes-192-cbc' | 'aes-256-cbc' {
-  switch (keyLen) {
-    case 16:
-      return 'aes-128-cbc';
-    case 24:
-      return 'aes-192-cbc';
-    case 32:
-      return 'aes-256-cbc';
-    default:
-      throw new Error(`AES key length must be 16/24/32 bytes, got ${keyLen}`);
-  }
+  assertAesKeyLen(key.byteLength);
+  const zeroIv = new Uint8Array(BLOCK_SIZE);
+  // disablePadding → exactly 16 ciphertext bytes for the 16-byte input.
+  return cbc(key, zeroIv, { disablePadding: true }).encrypt(block);
 }
 
 // =====================================================================
@@ -244,27 +224,13 @@ export function clearSivBits(tag: Uint8Array): Uint8Array {
 // =====================================================================
 
 function aesCtr(key: Uint8Array, counter: Uint8Array, data: Uint8Array): Uint8Array {
-  const alg =
-    key.byteLength === 16
-      ? 'aes-128-ctr'
-      : key.byteLength === 24
-        ? 'aes-192-ctr'
-        : key.byteLength === 32
-          ? 'aes-256-ctr'
-          : null;
-  if (!alg) {
-    throw new Error(`AES key length must be 16/24/32 bytes, got ${key.byteLength}`);
-  }
+  assertAesKeyLen(key.byteLength);
   if (counter.byteLength !== BLOCK_SIZE) {
     throw new Error('aesCtr: counter must be 16 bytes');
   }
-  const cipher = createCipheriv(alg, key, counter);
-  const a = cipher.update(data);
-  const b = cipher.final();
-  const out = new Uint8Array(a.byteLength + b.byteLength);
-  out.set(Uint8Array.from(a), 0);
-  out.set(Uint8Array.from(b), a.byteLength);
-  return out;
+  // `@noble/ciphers` CTR — pure JS, byte-identical to Node's aes-*-ctr.
+  // CTR is symmetric, so `.encrypt` doubles as decrypt.
+  return ctr(key, counter).encrypt(data);
 }
 
 // =====================================================================
@@ -360,25 +326,15 @@ export function sivEncryptV0(masterKey: Uint8Array, plaintext: string): Uint8Arr
     throw new Error('Invalid encryption key');
   }
   const bytes = utf8Encode(plaintext);
-  // Compute the pseudo-deterministic IV.
-  const fullDigest = createHash('sha256').update(bytes).digest();
-  const iv = new Uint8Array(12);
-  iv.set(fullDigest.subarray(0, 12));
+  // Pseudo-deterministic IV = SHA-256(plaintext)[0:12].
+  const iv = sha256(bytes).slice(0, 12);
 
-  const cipher = createCipheriv('aes-256-gcm', masterKey, iv);
-  const ct1 = cipher.update(bytes);
-  const ct2 = cipher.final();
-  const tag = cipher.getAuthTag();
-
-  const out = new Uint8Array(iv.byteLength + ct1.byteLength + ct2.byteLength + tag.byteLength);
-  let offset = 0;
-  out.set(iv, offset);
-  offset += iv.byteLength;
-  out.set(Uint8Array.from(ct1), offset);
-  offset += ct1.byteLength;
-  out.set(Uint8Array.from(ct2), offset);
-  offset += ct2.byteLength;
-  out.set(Uint8Array.from(tag), offset);
+  // noble GCM `.encrypt` returns `ciphertext ‖ tag(16)`; layout is
+  // `[IV(12) ‖ ct ‖ tag(16)]`.
+  const sealed = gcm(masterKey, iv).encrypt(bytes);
+  const out = new Uint8Array(iv.byteLength + sealed.byteLength);
+  out.set(iv, 0);
+  out.set(sealed, iv.byteLength);
   return out;
 }
 
@@ -393,16 +349,9 @@ export function sivDecryptV0(masterKey: Uint8Array, sealed: Uint8Array): string 
     throw new Error('Encrypted data is bad');
   }
   const iv = sealed.subarray(0, 12);
-  const ct = sealed.subarray(12, sealed.byteLength - 16);
-  const tag = sealed.subarray(sealed.byteLength - 16);
-
-  const decipher = createDecipheriv('aes-256-gcm', masterKey, iv);
-  decipher.setAuthTag(tag);
-  const a = decipher.update(ct);
-  const b = decipher.final(); // throws on tag mismatch
-  const plain = new Uint8Array(a.byteLength + b.byteLength);
-  plain.set(Uint8Array.from(a), 0);
-  plain.set(Uint8Array.from(b), a.byteLength);
+  const ctAndTag = sealed.subarray(12);
+  // noble GCM verifies the 16-byte auth tag and throws on mismatch.
+  const plain = gcm(masterKey, iv).decrypt(ctAndTag);
   return utf8Decode(plain);
 }
 

@@ -11,14 +11,19 @@
  *   - For the AES-GCM content sub-key, the desktop client passes a
  *     ZERO-LENGTH Uint8Array — see encryption-provider.js:L168.
  *
+ * Implementation: `@noble/hashes` HKDF (RFC 5869) — pure JS, so it runs
+ * on desktop (Electron), Obsidian Mobile (Capacitor WebView, no
+ * `node:crypto`) and Node/Jest alike. Verified byte-identical to Node's
+ * `hkdfSync('sha256', …)`.
+ *
  * Source mirror:
  *   - analysis/desktop/modules/crypto/encryption-provider.js:L42-L58
  *   - analysis/desktop/modules/crypto/encryption-provider.js:L141-L176
  *   - analysis/desktop/app.readable.js:L46717-L46732
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { hkdfSync } from 'node:crypto';
+import { hkdf } from '@noble/hashes/hkdf';
+import { sha256 } from '@noble/hashes/sha2';
 
 // Four info labels, exported for shared use across the package and the
 // upcoming `obsync-client` derivations.
@@ -44,16 +49,6 @@ export function hkdfDerive(
   salt: Uint8Array,
   len = 32,
 ): Uint8Array {
-  // Node's hkdfSync returns ArrayBuffer; we wrap it as a Uint8Array view
-  // backed by a fresh copy so the caller may freely mutate / zero it.
-  const ab = hkdfSync(
-    'sha256',
-    masterKey,
-    salt,
-    new TextEncoder().encode(info),
-    len,
-  );
-  const u8 = new Uint8Array(len);
-  u8.set(new Uint8Array(ab));
-  return u8;
+  // `hkdf` returns a fresh `len`-byte Uint8Array the caller fully owns.
+  return hkdf(sha256, masterKey, salt, new TextEncoder().encode(info), len);
 }

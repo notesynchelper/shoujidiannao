@@ -20,8 +20,7 @@
  *   - analysis/desktop/app.readable.js:L46660-L46680 (function `aw`)
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { scryptSync } from 'node:crypto';
+import { scrypt } from '@noble/hashes/scrypt';
 import { utf8Encode } from './utils.js';
 
 export const SCRYPT_N = 131072;
@@ -39,7 +38,7 @@ export const SCRYPT_MAXMEM = 268435456;
  * `key-derivation.js:L39-L57`). We replicate that behaviour exactly so
  * the keyHash on the wire matches the desktop client.
  *
- * @throws if Node's scrypt rejects the parameters (e.g. wrong maxmem).
+ * @throws if scrypt rejects the parameters.
  */
 export function scryptDerive(password: string, salt: string): Uint8Array {
   // Step 1: NFKC normalise both inputs. The desktop client does this
@@ -49,28 +48,20 @@ export function scryptDerive(password: string, salt: string): Uint8Array {
   const pwNorm = password.normalize('NFKC');
   const saltNorm = salt.normalize('NFKC');
 
-  // Step 2: UTF-8 encode. We use Buffer-friendly typed arrays; scryptSync
-  // accepts both Buffer and Uint8Array but we pass Buffer for clarity.
-  const pwBuf = Buffer.from(utf8Encode(pwNorm));
-  const saltBuf = Buffer.from(utf8Encode(saltNorm));
+  // Step 2: UTF-8 encode. `utf8Encode` already yields a Uint8Array — no
+  // `Buffer` wrap so this stays mobile-safe (no `node:buffer`).
+  const pwBuf = utf8Encode(pwNorm);
+  const saltBuf = utf8Encode(saltNorm);
 
-  // Step 3: Run scrypt with the fixed parameters. We deliberately do NOT
-  // expose a "browser fallback" path here; the spec says callers must
-  // produce byte-identical output across implementations, so the v1
-  // server-side build only supports Node's native scrypt. Browser/WASM
-  // fallback via scrypt-js is left as a TODO (the package depends on
-  // scrypt-js so we can wire it later without re-deploying).
-  const out = scryptSync(pwBuf, saltBuf, SCRYPT_DK_LEN, {
+  // Step 3: Run scrypt with the fixed parameters via `@noble/hashes` —
+  // pure JS, so it runs on Obsidian Mobile (no `node:crypto`) and is
+  // byte-identical to Node's `scryptSync`. `noble` returns a fresh
+  // `dkLen`-byte Uint8Array the caller fully owns. Node's `maxmem` guard
+  // is unnecessary — noble allocates exactly the scrypt working set.
+  return scrypt(pwBuf, saltBuf, {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
-    maxmem: SCRYPT_MAXMEM,
+    dkLen: SCRYPT_DK_LEN,
   });
-
-  // scryptSync returns Buffer; convert to a fresh Uint8Array sliced to
-  // the exact 32-byte view so callers can't accidentally see the Buffer
-  // pool's underlying memory.
-  const u8 = new Uint8Array(SCRYPT_DK_LEN);
-  u8.set(out);
-  return u8;
 }

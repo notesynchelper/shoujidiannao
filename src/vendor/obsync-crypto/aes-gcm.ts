@@ -14,8 +14,8 @@
  *   - analysis/desktop/app.readable.js:L46614-L46651
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { gcm } from '@noble/ciphers/aes';
+import { randomBytes } from '@noble/hashes/utils';
 
 const GCM_IV_LEN = 12;
 const GCM_TAG_LEN = 16;
@@ -56,20 +56,13 @@ export function gcmEncrypt(
     throw new Error(`gcmEncrypt: IV must be ${GCM_IV_LEN} bytes`);
   }
 
-  const cipher = createCipheriv('aes-256-gcm', key, useIv);
-  const ct1 = cipher.update(plaintext);
-  const ct2 = cipher.final();
-  const tag = cipher.getAuthTag();
-
-  const out = new Uint8Array(GCM_IV_LEN + ct1.byteLength + ct2.byteLength + tag.byteLength);
-  let offset = 0;
-  out.set(useIv, offset);
-  offset += GCM_IV_LEN;
-  out.set(Uint8Array.from(ct1), offset);
-  offset += ct1.byteLength;
-  out.set(Uint8Array.from(ct2), offset);
-  offset += ct2.byteLength;
-  out.set(Uint8Array.from(tag), offset);
+  // `@noble/ciphers` GCM — pure JS, byte-identical to Node's
+  // `aes-256-gcm`. `.encrypt()` returns `ciphertext ‖ tag` (16-byte
+  // tag appended), so the wire layout is `[IV(12) ‖ ct ‖ tag(16)]`.
+  const sealed = gcm(key, useIv).encrypt(plaintext);
+  const out = new Uint8Array(GCM_IV_LEN + sealed.byteLength);
+  out.set(useIv, 0);
+  out.set(sealed, GCM_IV_LEN);
   return out;
 }
 
@@ -97,33 +90,13 @@ export function gcmDecrypt(key: Uint8Array, sealed: Uint8Array): Uint8Array {
   if (sealed.byteLength === GCM_IV_LEN) {
     return new Uint8Array(0);
   }
-  if (sealed.byteLength < GCM_IV_LEN + GCM_TAG_LEN) {
-    // < 28 bytes: there's some "ciphertext+tag" but not even a full tag.
-    // Let Node's GCM tag check produce the eventual error rather than
-    // pre-rejecting — this matches the desktop behaviour of "step 5
-    // delegates the error to subtle.decrypt".
-    // We still need to slice out a tag to call setAuthTag; do the
-    // straightforward thing and let it fail naturally.
-  }
-
+  // `[IV(12) ‖ ct ‖ tag(16)]` → hand `ct ‖ tag` to noble's GCM, which
+  // verifies the 16-byte auth tag and throws on failure or on input too
+  // short to even hold a tag (mirrors the desktop "delegate to
+  // subtle.decrypt" error path).
   const iv = sealed.subarray(0, GCM_IV_LEN);
-  const tagStart = sealed.byteLength - GCM_TAG_LEN;
-  if (tagStart <= GCM_IV_LEN - 1) {
-    // Should not happen given the prior length checks but keeps the
-    // subarray indices honest.
-    throw new Error('Encrypted data is bad');
-  }
-  const ct = sealed.subarray(GCM_IV_LEN, tagStart);
-  const tag = sealed.subarray(tagStart);
-
-  const decipher = createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(tag);
-  const a = decipher.update(ct);
-  const b = decipher.final(); // throws on auth failure
-  const out = new Uint8Array(a.byteLength + b.byteLength);
-  out.set(Uint8Array.from(a), 0);
-  out.set(Uint8Array.from(b), a.byteLength);
-  return out;
+  const ctAndTag = sealed.subarray(GCM_IV_LEN);
+  return gcm(key, iv).decrypt(ctAndTag); // throws on auth failure
 }
 
 export const GCM_CONSTANTS = {

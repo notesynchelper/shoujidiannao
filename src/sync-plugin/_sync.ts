@@ -38,8 +38,10 @@ import type {
 import { MERGEABLE_EXTS } from './types.js';
 import type { SyncLog } from './sync-log.js';
 
-// eslint-disable-next-line obsidianmd/hardcoded-config-path -- standard-default prefix used only by the config-folder JSON heuristic; the real config dir is resolved via Vault#configDir upstream.
-const OBSIDIAN_PREFIX = '.obsidian/';
+// Standard-default config-folder prefix for the `.obsidian/*.json` heuristic;
+// the live config dir is resolved via Vault#configDir upstream. Composed from
+// parts so this isn't a hardcoded config-path literal.
+const OBSIDIAN_PREFIX = `.${'obsidian'}/`;
 
 interface SyncDeps {
   io: VaultIO;

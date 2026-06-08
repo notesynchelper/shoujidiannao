@@ -96,8 +96,9 @@ export function mergeObsidianJson(
   }
   const merged = shallowMergeJson(local, remote);
   let out = JSON.stringify(merged, undefined, 2);
-  // eslint-disable-next-line obsidianmd/hardcoded-config-path -- matches the standard-default top-level config path; nested paths use the relative suffix above and real dir resolution happens via Vault#configDir upstream.
-  if (filePath.endsWith('/core-plugins.json') || filePath === '.obsidian/core-plugins.json') {
+  // `endsWith('/core-plugins.json')` already covers the config-folder path
+  // (e.g. `<configDir>/core-plugins.json`), so no config-dir literal is needed.
+  if (filePath.endsWith('/core-plugins.json')) {
     out = patchCorePluginsContent(out);
   }
   return out;

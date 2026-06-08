@@ -25,8 +25,7 @@
  *   - analysis/desktop/modules/crypto/encryption-provider.js:L42-L58
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { randomBytes } from 'node:crypto';
+import { randomBytes } from '@noble/hashes/utils';
 import { hkdfDerive, INFO_KEY_HASH } from './hkdf.js';
 import { bytesToHex, utf8Encode } from './utils.js';
 
@@ -47,9 +46,10 @@ export interface ClientVaultKey {
  *   - zeroing `masterKey` after the IndexedDB write completes
  */
 export function generateClientVaultKey(): ClientVaultKey {
-  const masterKey = new Uint8Array(randomBytes(32));
-  const saltBytes = randomBytes(16);
-  const saltHex = bytesToHex(new Uint8Array(saltBytes));
+  // `randomBytes` (@noble/hashes) wraps `crypto.getRandomValues` with
+  // platform detection — mobile-safe, returns fresh Uint8Arrays.
+  const masterKey = randomBytes(32);
+  const saltHex = bytesToHex(randomBytes(16));
   return { masterKey, saltHex };
 }
 

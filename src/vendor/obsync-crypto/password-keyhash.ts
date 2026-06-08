@@ -14,8 +14,7 @@
  *   - analysis/desktop/app.readable.js:L48493-L48505 (`yk`)
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { createHash } from 'node:crypto';
+import { sha256 } from '@noble/hashes/sha2';
 import { scryptDerive } from './scrypt.js';
 import { hkdfDerive, INFO_KEY_HASH } from './hkdf.js';
 import { bytesToHex, utf8Encode } from './utils.js';
@@ -74,8 +73,8 @@ export function generateKeyHash(
  * the master key via scrypt; v0 simply hashes that out.
  */
 function keyHashV0(masterKey: Uint8Array): string {
-  const digest = createHash('sha256').update(masterKey).digest();
-  return bytesToHex(new Uint8Array(digest));
+  // `sha256` (@noble/hashes) returns a fresh 32-byte Uint8Array.
+  return bytesToHex(sha256(masterKey));
 }
 
 /**

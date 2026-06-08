@@ -2,26 +2,24 @@
  * Common helpers: constant-time compare, zeroOut, hex codecs.
  *
  * `constantTimeEqual` mirrors the desktop client's helper at
- * [analysis/desktop/modules/crypto/aes-siv.js:L326-L331] — except we
- * delegate to Node's `crypto.timingSafeEqual` which guarantees no
- * data-dependent branching at the native layer.
+ * [analysis/desktop/modules/crypto/aes-siv.js:L326-L331]. It is a pure-JS
+ * branch-free XOR-accumulate compare (no `node:crypto`) so the whole
+ * package stays runnable on Obsidian Mobile.
  */
 
-// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
-import { timingSafeEqual } from 'node:crypto';
-
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  // Length check up front: timingSafeEqual throws on length mismatch. We
-  // intentionally short-circuit before touching the native compare so that
-  // callers can pass arbitrary-length buffers without crashing. Returning
-  // false on length mismatch does not leak useful timing because the lengths
-  // are themselves observable plaintext.
+  // Length check up front. Returning false on length mismatch does not
+  // leak useful timing because the lengths are themselves observable.
   if (a.byteLength !== b.byteLength) {
     return false;
   }
-  // Wrap as Buffer to satisfy the Node API. Buffer.from(view) creates a
-  // copy of the underlying bytes (not a view), which is fine for compare.
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  // Branch-free XOR accumulate over every byte — the comparison cost is
+  // independent of WHERE (or whether) the buffers differ.
+  let diff = 0;
+  for (let i = 0; i < a.byteLength; i++) {
+    diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  }
+  return diff === 0;
 }
 
 /**
