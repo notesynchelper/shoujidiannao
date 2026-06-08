@@ -17,11 +17,10 @@
  * implemented; anything else is a runtime no-op. If we ever extend
  * SyncServer's wire-level API, this adapter must grow alongside it.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type WsEventName = 'open' | 'message' | 'close' | 'error';
 
-type Listener = (...args: any[]) => void;
+type Listener = (...args: unknown[]) => void;
 
 /**
  * Public surface compatible with `ws.WebSocket` for the few methods +
@@ -55,7 +54,7 @@ export class BrowserWsAdapter implements NodeWsLike {
 
   constructor(url: string) {
     // Use renderer-provided WebSocket (Electron / browser).
-    const W = (globalThis as { WebSocket?: typeof WebSocket }).WebSocket;
+    const W = (window as { WebSocket?: typeof WebSocket }).WebSocket;
     if (typeof W !== 'function') {
       throw new Error('BrowserWsAdapter: no native WebSocket in globalThis');
     }
@@ -83,7 +82,7 @@ export class BrowserWsAdapter implements NodeWsLike {
       if (isBinary) {
         payload = data; // ArrayBuffer goes through unchanged
       } else {
-        const s = data as string;
+        const s = data;
         payload = {
           toString: () => s,
         };
@@ -126,7 +125,6 @@ export class BrowserWsAdapter implements NodeWsLike {
       if (queued && queued.length > 0) {
         for (const args of queued.splice(0)) {
           try { listener(...args); } catch (e) {
-            // eslint-disable-next-line no-console
             console.error('[BrowserWsAdapter]', event, 'replay listener threw', e);
           }
         }
@@ -151,7 +149,7 @@ export class BrowserWsAdapter implements NodeWsLike {
   }
 
   once(event: WsEventName, listener: Listener): this {
-    const wrap = (...args: any[]): void => {
+    const wrap = (...args: unknown[]): void => {
       this.off(event, wrap);
       listener(...args);
     };
@@ -159,7 +157,7 @@ export class BrowserWsAdapter implements NodeWsLike {
   }
 
   send(data: string | ArrayBufferView | ArrayBuffer, _opts?: { binary?: boolean }): void {
-    this.ws.send(data as any);
+    this.ws.send(data);
   }
 
   close(code?: number, reason?: string): void {
@@ -186,7 +184,6 @@ export class BrowserWsAdapter implements NodeWsLike {
     for (const cb of arr.slice()) {
       try { cb(...args); } catch (e) {
         // Best-effort: surface listener errors through `error`.
-        // eslint-disable-next-line no-console
         console.error('[BrowserWsAdapter]', event, 'listener threw', e);
       }
     }

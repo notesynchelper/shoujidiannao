@@ -94,7 +94,7 @@ export class ApiClient {
       typeof opts.baseUrl === 'string'
         ? opts.baseUrl.replace(/\/+$/, '')
         : opts.baseUrl;
-    this.fetchImpl = opts.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    this.fetchImpl = opts.fetchImpl ?? window.fetch.bind(window);
   }
 
   /** Resolve the current HTTPS base — sticky to the pool's active slot. */
@@ -302,7 +302,7 @@ export class ApiClient {
     }
 
     if (parsed && typeof parsed === 'object' && 'error' in parsed) {
-      const err = (parsed as { error: unknown }).error;
+      const err = (parsed).error;
       if (typeof err === 'string') {
         if (err === NOT_LOGGED_IN_LITERAL) throw new NotLoggedInError();
         throw new ApiError(err);

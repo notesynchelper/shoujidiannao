@@ -57,7 +57,7 @@ export function displayRequireLogin(
   host: RequireLoginHost,
   callbacks: RequireLoginCallbacks,
 ): RequireLoginHandle {
-  const doc = host.containerEl.ownerDocument!;
+  const doc = host.containerEl.ownerDocument;
   host.containerEl.innerHTML = '';
 
   const wrap = doc.createElement('div');
@@ -65,7 +65,7 @@ export function displayRequireLogin(
   host.containerEl.appendChild(wrap);
 
   const h2 = doc.createElement('h2');
-  h2.textContent = 'Sign in to Obsync';
+  h2.textContent = 'Sign in to obsync';
   wrap.appendChild(h2);
 
   const p = doc.createElement('p');
@@ -74,7 +74,7 @@ export function displayRequireLogin(
 
   const signinBtn = doc.createElement('button');
   signinBtn.className = 'mod-cta obsync-require-login__signin';
-  signinBtn.textContent = 'Sign in with WeChat';
+  signinBtn.textContent = 'Sign in with wechat';
   wrap.appendChild(signinBtn);
 
   const codeZone = doc.createElement('div');
@@ -124,7 +124,7 @@ async function openWechatCode(
   callbacks: RequireLoginCallbacks,
   attach: (handle: { stop: () => void; once: () => Promise<void> }) => void,
 ): Promise<void> {
-  const doc = codeZone.ownerDocument!;
+  const doc = codeZone.ownerDocument;
   codeZone.innerHTML = '';
 
   const status = doc.createElement('p');
@@ -132,7 +132,7 @@ async function openWechatCode(
   status.textContent = '正在生成验证码…';
   codeZone.appendChild(status);
 
-  let start;
+  let start: Awaited<ReturnType<typeof host.api.wechatCodeStart>>;
   try {
     start = await host.api.wechatCodeStart();
   } catch (e) {
@@ -145,11 +145,6 @@ async function openWechatCode(
   // The 6-digit code itself — large, selectable, easy to copy.
   const codeEl = doc.createElement('div');
   codeEl.className = 'obsync-require-login__code-value';
-  codeEl.style.fontSize = '2em';
-  codeEl.style.letterSpacing = '0.25em';
-  codeEl.style.fontFamily = 'monospace';
-  codeEl.style.margin = '0.5em 0';
-  codeEl.style.userSelect = 'all';
   codeEl.textContent = start.code;
   codeZone.appendChild(codeEl);
 
@@ -164,20 +159,20 @@ async function openWechatCode(
 
   // Polling loop
   let stopped = false;
-  let timerId: ReturnType<typeof setTimeout> | null = null;
+  let timerId: number | null = null;
   const interval = host.pollIntervalMs ?? 2000;
 
   async function pollOnce(): Promise<void> {
     if (stopped) return;
     try {
-      const resp = await host.api.wechatCodePoll(start!.session_id);
+      const resp = await host.api.wechatCodePoll(start.session_id);
       if (stopped) return;
       switch (resp.status) {
         case 'pending':
           status.textContent = '正在等待消息送达…';
           break;
         case 'expired':
-          status.textContent = '验证码已过期，请点击 "Sign in with WeChat" 重新获取';
+          status.textContent = '验证码已过期，请点击 "sign in with wechat" 重新获取';
           stopped = true;
           return;
         case 'ok': {
@@ -202,9 +197,11 @@ async function openWechatCode(
 
   function scheduleNext(): void {
     if (stopped || interval <= 0) return;
-    timerId = setTimeout(async () => {
-      await pollOnce();
-      scheduleNext();
+    timerId = window.setTimeout(() => {
+      void (async () => {
+        await pollOnce();
+        scheduleNext();
+      })();
     }, interval);
   }
 
@@ -212,7 +209,7 @@ async function openWechatCode(
     stop() {
       stopped = true;
       if (timerId) {
-        clearTimeout(timerId);
+        window.clearTimeout(timerId);
         timerId = null;
       }
     },
@@ -232,7 +229,7 @@ export function renderPasteTokenSection(
   parent: HTMLElement,
   callbacks: RequireLoginCallbacks,
 ): void {
-  const doc = parent.ownerDocument!;
+  const doc = parent.ownerDocument;
   const details = doc.createElement('details');
   details.className = 'obsync-paste-token';
 
@@ -241,14 +238,13 @@ export function renderPasteTokenSection(
   details.appendChild(summary);
 
   const warn = doc.createElement('p');
+  warn.className = 'obsync-paste-token__warn';
   warn.textContent = '仅用于本地测试；生产构建不会显示此面板';
-  warn.style.color = 'var(--text-error, #c00)';
   details.appendChild(warn);
 
   function makeInput(label: string, placeholder: string): HTMLInputElement {
     const wrap = doc.createElement('label');
-    wrap.style.display = 'block';
-    wrap.style.marginTop = '0.5em';
+    wrap.className = 'obsync-paste-token__field';
     const span = doc.createElement('span');
     span.textContent = `${label} `;
     wrap.appendChild(span);

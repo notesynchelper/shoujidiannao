@@ -142,7 +142,7 @@ export function renderSettingsTab(host: SettingsHost): { dispose: () => void } {
 
 function renderMain(host: SettingsHost, rerender: () => void): void {
   const data = host.getData();
-  const doc = host.containerEl.ownerDocument!;
+  const doc = host.containerEl.ownerDocument;
   host.containerEl.innerHTML = '';
 
   const root = doc.createElement('div');
@@ -184,14 +184,14 @@ function renderMain(host: SettingsHost, rerender: () => void): void {
   for (const ft of FILE_TYPE_KEYS) {
     appendToggleRow(root, ft.label, ft.desc, data.allowTypes[ft.key], async (next) => {
       if (ft.key === 'md') return; // always on; ignore click
-      const allowTypes = { ...data.allowTypes, [ft.key]: next } as AllowTypeFlags;
+      const allowTypes = { ...data.allowTypes, [ft.key]: next };
       await host.setData({ allowTypes });
       rerender();
     }, ft.key === 'md');
   }
 
   // --- Special files (.obsidian/) ------------------------------------
-  appendHeading(root, 'Special files (.obsidian)');
+  appendHeading(root, 'Special files (config folder)');
   for (const cat of TOGGLEABLE_SPECIAL_CATEGORIES) {
     appendToggleRow(
       root,
@@ -202,7 +202,7 @@ function renderMain(host: SettingsHost, rerender: () => void): void {
         const allowSpecialFiles = {
           ...data.allowSpecialFiles,
           [cat]: next,
-        } as AllowSpecialFlags;
+        };
         await host.setData({ allowSpecialFiles });
         rerender();
       },
@@ -214,10 +214,12 @@ function renderMain(host: SettingsHost, rerender: () => void): void {
     const btn = doc.createElement('button');
     btn.textContent = 'Manage…';
     btn.className = 'obsync-settings__manage-excluded';
-    btn.addEventListener('click', async () => {
-      const next = await host.manageExcludedFolders([...data.excludedFolders]);
-      await host.setData({ excludedFolders: next });
-      rerender();
+    btn.addEventListener('click', () => {
+      void (async () => {
+        const next = await host.manageExcludedFolders([...data.excludedFolders]);
+        await host.setData({ excludedFolders: next });
+        rerender();
+      })();
     });
     control.appendChild(btn);
   });
@@ -266,7 +268,7 @@ function renderMain(host: SettingsHost, rerender: () => void): void {
 // ---------------------------------------------------------------------
 
 function appendHeading(parent: HTMLElement, text: string): void {
-  const doc = parent.ownerDocument!;
+  const doc = parent.ownerDocument;
   const h = doc.createElement('h3');
   h.textContent = text;
   h.className = 'obsync-settings__heading';
@@ -279,7 +281,7 @@ function appendRow(
   desc: string,
   buildControl: (control: HTMLElement) => void,
 ): void {
-  const doc = parent.ownerDocument!;
+  const doc = parent.ownerDocument;
   const row = doc.createElement('div');
   row.className = 'obsync-settings__row';
 
@@ -312,7 +314,7 @@ function appendToggleRow(
   disabled = false,
 ): void {
   appendRow(parent, title, desc, (control) => {
-    const doc = control.ownerDocument!;
+    const doc = control.ownerDocument;
     const input = doc.createElement('input');
     input.type = 'checkbox';
     input.checked = checked;

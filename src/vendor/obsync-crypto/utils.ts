@@ -7,6 +7,7 @@
  * data-dependent branching at the native layer.
  */
 
+// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
 import { timingSafeEqual } from 'node:crypto';
 
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {

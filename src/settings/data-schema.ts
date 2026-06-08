@@ -23,6 +23,7 @@ export const DATA_VER = 2 as const;
 export const DEFAULT_PER_FILE_MAX = 208_666_624;
 
 /** Default config dir (Obsidian standard). */
+// eslint-disable-next-line obsidianmd/hardcoded-config-path -- documented standard default only; the real dir is resolved at runtime via Vault#configDir (see main.ts effectiveConfigDir), this is the fallback.
 export const DEFAULT_CONFIG_DIR = '.obsidian';
 
 /** Spec 06 §2.2 — `mk = ["image","audio","pdf","video"]` default ON. */

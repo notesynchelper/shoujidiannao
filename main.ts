@@ -82,7 +82,7 @@ function deriveWsUrl(apiBase: string): string {
 
 function b64uEncode(bytes: Uint8Array): string {
   let s = '';
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]!);
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -235,7 +235,7 @@ export default class ObsyncPlugin extends Plugin {
       });
       this.addCommand({
         id: 'debug-force-resync',
-        name: 'Force resync (E2E)',
+        name: 'Force resync (e2e)',
         callback: () => {
           this.writeE2ELog('force-resync');
           if (this.syncPlugin) void this.syncPlugin.requestSync();
@@ -246,14 +246,14 @@ export default class ObsyncPlugin extends Plugin {
       // E2E builds because there is no real attacker scenario).
       this.addCommand({
         id: 'debug-pair-start-as-d1',
-        name: 'Start /pair/* as Device 1 (E2E)',
+        name: 'Start /pair/* as device 1 (e2e)',
         callback: () => {
           void this.debugPairStartAsD1();
         },
       });
       this.addCommand({
         id: 'debug-pair-submit-as-d2',
-        name: 'Submit pair code as Device 2 (E2E)',
+        name: 'Submit pair code as device 2 (e2e)',
         callback: () => {
           void this.debugPairSubmitAsD2();
         },
@@ -264,7 +264,7 @@ export default class ObsyncPlugin extends Plugin {
       // keystrokes / mouse clicks.
       this.addCommand({
         id: 'debug-open-settings-tab',
-        name: 'Open Obsync settings tab (E2E)',
+        name: 'Open obsync settings tab (e2e)',
         callback: () => {
           const app = this.app as unknown as {
             setting?: {
@@ -352,7 +352,7 @@ export default class ObsyncPlugin extends Plugin {
             ...this.data,
             masterKey: b64uEncode(masterKey),
             vaultSalt: saltHex,
-          } as PluginData;
+          };
           await this.saveData(this.data);
           return meta;
         },
@@ -362,7 +362,7 @@ export default class ObsyncPlugin extends Plugin {
         vaultId: r.vault.id,
         vaultName: r.vault.name,
         vaultHost: r.vault.host ?? this.data.vaultHost,
-      } as PluginData;
+      };
       await this.saveData(this.data);
       this.writeE2ELog('auto-bootstrap', {
         vaultId: r.vault.id,
@@ -655,7 +655,7 @@ export default class ObsyncPlugin extends Plugin {
   }
 
   async patchData(patch: Partial<PluginData>): Promise<void> {
-    this.data = { ...this.data, ...patch } as PluginData;
+    this.data = { ...this.data, ...patch };
     // Account sub-object kept in lockstep.
     if (patch.account) {
       this.account.loadFrom(patch.account);
@@ -695,7 +695,7 @@ export default class ObsyncPlugin extends Plugin {
         url,
         method: (init?.method ?? 'GET').toUpperCase(),
         headers: (init?.headers ?? {}) as Record<string, string>,
-        body: typeof init?.body === 'string' ? (init.body as string) : undefined,
+        body: typeof init?.body === 'string' ? (init.body) : undefined,
         throw: false,
         contentType: 'application/json',
       });
@@ -707,7 +707,7 @@ export default class ObsyncPlugin extends Plugin {
         async text() { return r.text; },
         async arrayBuffer() { return r.arrayBuffer; },
       } as Response;
-    }) as typeof fetch;
+    });
     this.api = new ApiClient({ baseUrl: base, fetchImpl: reqUrlFetch });
   }
 
@@ -754,7 +754,7 @@ export default class ObsyncPlugin extends Plugin {
           vaultId: vault.id,
           vaultName: vault.name,
           vaultHost: vault.host ?? this.data.vaultHost,
-        } as PluginData;
+        };
         await this.saveData(this.data);
         await this.startSyncIfReady();
         new Notice('已成功导入密钥');
@@ -959,7 +959,7 @@ export default class ObsyncPlugin extends Plugin {
               vaultId: s.vault.id,
               vaultName: s.vault.name,
               vaultHost: s.vault.host ?? this.data.vaultHost,
-            } as PluginData;
+            };
             await this.saveData(this.data);
             await adapter.write?.(
               'qa-pair-result.json',
@@ -1027,8 +1027,8 @@ class ExcludedFoldersModal extends Modal {
     // than a bare <ul>.
     if (this.current.length === 0) {
       const empty = this.contentEl.createEl('p');
+      empty.className = 'obsync-exclude-empty';
       empty.textContent = '当前没有排除任何目录。';
-      empty.style.color = 'var(--text-muted)';
     } else {
       for (const f of this.current) {
         new SettingClass(this.contentEl).setName(f).addButton((b) =>
@@ -1049,7 +1049,7 @@ class ExcludedFoldersModal extends Modal {
       .setName('添加目录')
       .setDesc('整个目录及其子项都会被排除。')
       .addText((t) => {
-        t.setPlaceholder('目录路径（如 Templates）').onChange((v) => {
+        t.setPlaceholder('目录路径（如 templates）').onChange((v) => {
           nextValue = v.trim();
         });
       })

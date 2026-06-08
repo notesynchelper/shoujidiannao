@@ -65,7 +65,7 @@ export interface PairDevice1Options {
 /** base64url **without padding** — matches wire conventions in pair.ts. */
 function b64u(bytes: Uint8Array): string {
   let s = '';
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]!);
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 function fromB64u(s: string): Uint8Array {
@@ -86,7 +86,7 @@ export class PairDevice1 {
   private readonly emit: (s: D1State) => void;
 
   private state: D1State = { phase: 'idle' };
-  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollTimer: number | null = null;
   private cancelled = false;
 
   // session-private material — never log / surface in UI
@@ -234,7 +234,7 @@ export class PairDevice1 {
       // If we left a polling phase, don't re-arm.
       if (this.cancelled) return;
       if (this.state.phase !== 'code_displayed') return;
-      this.pollTimer = setTimeout(() => {
+      this.pollTimer = window.setTimeout(() => {
         void tick();
       }, this.pollIntervalMs);
     };
@@ -243,7 +243,7 @@ export class PairDevice1 {
 
   private stopPolling(): void {
     if (this.pollTimer) {
-      clearTimeout(this.pollTimer);
+      window.clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
   }

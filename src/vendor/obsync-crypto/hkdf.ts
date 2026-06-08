@@ -17,6 +17,7 @@
  *   - analysis/desktop/app.readable.js:L46717-L46732
  */
 
+// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
 import { hkdfSync } from 'node:crypto';
 
 // Four info labels, exported for shared use across the package and the

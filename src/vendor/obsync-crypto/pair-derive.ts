@@ -54,7 +54,7 @@ import { utf8Encode } from './utils.js';
 // Node ≥ 19 exposes `globalThis.crypto` per WHATWG spec; we don't
 // fall back to `require('node:crypto').webcrypto` because the runtime
 // mismatch above would silently break Electron consumers.
-const subtle: SubtleCrypto = globalThis.crypto.subtle;
+const subtle: SubtleCrypto = window.crypto.subtle;
 
 export interface PairTranscriptInput {
   /** Exactly 6 ASCII decimal digits. */
@@ -159,7 +159,7 @@ export async function computeCommit(
   const buf = new Uint8Array(salt.byteLength + pubEph.byteLength);
   buf.set(salt, 0);
   buf.set(pubEph, salt.byteLength);
-  const digest = await subtle.digest('SHA-256', buf as unknown as BufferSource);
+  const digest = await subtle.digest('SHA-256', buf);
   return new Uint8Array(digest);
 }
 

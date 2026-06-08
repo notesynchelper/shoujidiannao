@@ -91,7 +91,7 @@ interface PendingRequest {
   resolve: (v: unknown) => void;
   reject: (e: Error) => void;
   op: string;
-  timer: ReturnType<typeof setTimeout> | null;
+  timer: number | null;
 }
 
 interface PendingBinary {
@@ -102,7 +102,7 @@ interface PendingBinary {
 export class SyncServer {
   private ws: WebSocket | null = null;
   private _state: ClientState = 'disconnected';
-  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private heartbeatTimer: number | null = null;
   private pending: PendingRequest[] = [];
   private pendingBinary: PendingBinary[] = [];
   /**
@@ -173,7 +173,7 @@ export class SyncServer {
         try {
           ws.send(JSON.stringify(frame));
         } catch (err) {
-          settle(() => reject(err as Error));
+          settle(() => reject(err instanceof Error ? err : new Error(String(err))));
           this.disconnect();
           return;
         }
@@ -191,9 +191,9 @@ export class SyncServer {
         }
         let msg: unknown;
         try {
-          msg = JSON.parse(raw.toString());
+          msg = JSON.parse(rawToString(raw));
         } catch {
-          settle(() => reject(new Error(`Server JSON failed to parse: ${raw.toString()}`)));
+          settle(() => reject(new Error(`Server JSON failed to parse: ${rawToString(raw)}`)));
           this.disconnect();
           return;
         }
@@ -206,7 +206,7 @@ export class SyncServer {
           return;
         }
         if (!isInitOk(msg)) {
-          settle(() => reject(new Error(`Did not respond to login request: ${raw.toString()}`)));
+          settle(() => reject(new Error(`Did not respond to login request: ${rawToString(raw)}`)));
           this.disconnect();
           return;
         }
@@ -225,7 +225,7 @@ export class SyncServer {
         this.cleanupAfterClose();
         // If Init never settled, the rejection wins.
         settle(() => {
-          if (code === CloseCode.ABNORMAL_CLOSURE) {
+          if (code === Number(CloseCode.ABNORMAL_CLOSURE)) {
             reject(new Error('Unable to connect to server.'));
           } else {
             reject(new Error(`Disconnected. Code: ${code} ${reason}`));
@@ -261,12 +261,12 @@ export class SyncServer {
       }
     }
     if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
+      window.clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
     const err = new Error(reason ?? 'Disconnected');
     for (const p of this.pending.splice(0)) {
-      if (p.timer) clearTimeout(p.timer);
+      if (p.timer) window.clearTimeout(p.timer);
       p.reject(err);
     }
     for (const b of this.pendingBinary.splice(0)) {
@@ -303,7 +303,7 @@ export class SyncServer {
 
     const timeoutMs = opts.timeoutMs ?? this.defaultRequestTimeoutMs;
     return new Promise<unknown>((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const timer = window.setTimeout(() => {
         const idx = this.pending.findIndex((p) => p === entry);
         if (idx >= 0) this.pending.splice(idx, 1);
         // Spec §3.6: timeout triggers disconnect().
@@ -470,10 +470,9 @@ export class SyncServer {
   // ---- internals -------------------------------------------------------
 
   private startHeartbeat(): void {
-    this.heartbeatTimer = setInterval(() => this.heartbeatSweep(), this.heartbeatSweepMs);
-    if (typeof this.heartbeatTimer.unref === 'function') {
-      this.heartbeatTimer.unref();
-    }
+    // Browser/Electron renderer timers are numeric handles with no Node-style
+    // `unref()`, so the heartbeat simply runs for the lifetime of the page.
+    this.heartbeatTimer = window.setInterval(() => this.heartbeatSweep(), this.heartbeatSweepMs);
   }
 
   private heartbeatSweep(): void {
@@ -516,7 +515,7 @@ export class SyncServer {
 
     let msg: unknown;
     try {
-      msg = JSON.parse(raw.toString());
+      msg = JSON.parse(rawToString(raw));
     } catch {
       // Spec §3.8 — invalid JSON → disconnect.
       this.disconnect('invalid JSON from server');
@@ -562,18 +561,18 @@ export class SyncServer {
       // No request in-flight — drop per spec §3.8.
       return;
     }
-    if (entry.timer) clearTimeout(entry.timer);
+    if (entry.timer) window.clearTimeout(entry.timer);
     entry.resolve(msg);
   };
 
   private cleanupAfterClose(): void {
     if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
+      window.clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
     const err = new Error('Disconnected');
     for (const p of this.pending.splice(0)) {
-      if (p.timer) clearTimeout(p.timer);
+      if (p.timer) window.clearTimeout(p.timer);
       p.reject(err);
     }
     for (const b of this.pendingBinary.splice(0)) {
@@ -629,6 +628,18 @@ function isInitialDoneMsg(x: unknown): boolean {
 }
 
 /**
+ * Read an inbound TEXT frame as a string. `raw` is either a Node `ws`
+ * Buffer (desktop) or the `{ toString }` shim that `BrowserWsAdapter`
+ * wraps mobile text frames in — both expose a meaningful `toString()`,
+ * and a bare `ArrayBuffer` never reaches the text path. We call it via a
+ * narrow interface so the type-checker doesn't see `RawData`'s default
+ * object stringification.
+ */
+function rawToString(raw: WebSocket.RawData): string {
+  return (raw as { toString(): string }).toString();
+}
+
+/**
  * Normalize an inbound binary frame to a standalone ArrayBuffer.
  *
  * On the desktop Electron path the `ws` library's RawData is
@@ -658,9 +669,9 @@ function toArrayBuffer(raw: WebSocket.RawData): ArrayBuffer {
 
   // Node-only: Buffer[] from `ws` when frames arrive fragmented. Guarded
   // so the module can still be evaluated on mobile (no global Buffer).
-  const B = (globalThis as { Buffer?: typeof globalThis.Buffer }).Buffer;
+  const B = (window as { Buffer?: typeof window.Buffer }).Buffer;
   if (B && Array.isArray(raw)) {
-    const merged = B.concat(raw as Buffer[]);
+    const merged = B.concat(raw);
     const ab = new ArrayBuffer(merged.byteLength);
     new Uint8Array(ab).set(merged);
     return ab;

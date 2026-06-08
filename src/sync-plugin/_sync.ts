@@ -38,6 +38,7 @@ import type {
 import { MERGEABLE_EXTS } from './types.js';
 import type { SyncLog } from './sync-log.js';
 
+// eslint-disable-next-line obsidianmd/hardcoded-config-path -- standard-default prefix used only by the config-folder JSON heuristic; the real config dir is resolved via Vault#configDir upstream.
 const OBSIDIAN_PREFIX = '.obsidian/';
 
 interface SyncDeps {
@@ -173,11 +174,11 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
   // so we can satisfy the BufferSource type without leaking SharedArrayBuffer.
   const ab = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(ab).set(bytes);
-  const buf = await globalThis.crypto.subtle.digest('SHA-256', ab);
+  const buf = await window.crypto.subtle.digest('SHA-256', ab);
   const u = new Uint8Array(buf);
   let out = '';
   for (let i = 0; i < u.length; i++) {
-    out += u[i]!.toString(16).padStart(2, '0');
+    out += u[i].toString(16).padStart(2, '0');
   }
   return out;
 }
@@ -199,7 +200,7 @@ export function enqueueServerPush(state: SyncState, frame: ServerFileState): voi
   // De-dup by path (spec 05a §3.9): if a frame for the same path is
   // already queued, the new frame supersedes — drop the older entry.
   for (let i = 0; i < state.newServerFiles.length; i++) {
-    const e = state.newServerFiles[i]!;
+    const e = state.newServerFiles[i];
     if (e.path === frame.path) {
       state.newServerFiles.splice(i, 1);
       i--;
@@ -287,7 +288,7 @@ async function applyNewServerFiles(
   scanSnapshot: Map<string, FileMeta>,
 ): Promise<PhaseResult> {
   if (deps.state.newServerFiles.length === 0) return { more: false };
-  const frame = deps.state.newServerFiles[0]!;
+  const frame = deps.state.newServerFiles[0];
   const local = deps.state.localFiles.get(frame.path);
   // Refresh local hash before classify. scan() invalidates hash on disk
   // mtime/size drift (mobile SAF strips mtime, so hash gets nuked every
@@ -659,7 +660,7 @@ async function pushOrphans(
   // ack on the first push would re-arm the guard mid-batch and force the
   // user to re-acknowledge for every file (codex review P2).
   state.pendingMassDelete = null;
-  const path = candidates[0]!;
+  const path = candidates[0];
   const srv = state.serverFiles.get(path)!;
   await transport.push(
     {

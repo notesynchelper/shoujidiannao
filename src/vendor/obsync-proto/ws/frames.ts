@@ -12,7 +12,6 @@
  * `{op:"ready"}` / `{op:"push"}` server-push frames are NOT in scope
  * here — P4 will introduce those in the same module.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // ---------------------------------------------------------------------------
 // Init handshake — client → server
@@ -202,7 +201,7 @@ export const CLOSE_REASONS: Readonly<Record<number, string>> = Object.freeze({
 export function getCloseReason(code: number): string {
   if (code >= 0 && code < 1000) return '(Unused)';
   if (code === 1006) return 'Disconnected';
-  if (CLOSE_REASONS[code]) return CLOSE_REASONS[code]!;
+  if (CLOSE_REASONS[code]) return CLOSE_REASONS[code];
   if (code >= 1000 && code <= 1015) {
     // 1004, 1005 etc — known standard codes without an entry in our table.
     return '(For WebSocket standard)';

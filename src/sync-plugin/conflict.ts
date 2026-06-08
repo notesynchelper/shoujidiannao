@@ -148,7 +148,7 @@ export function classifyConflict(
 
   // ── Case 7: `.obsidian/*.json` shallow merge ─────────────────────────
   if (!remote.folder && !remote.deleted && remote.size > 0 && isObsidianJson) {
-    return { kind: 'obsidian-json-merge', reason: 'case 7 — .obsidian json merge' };
+    return { kind: 'obsidian-json-merge', reason: 'case 7 — config-dir json merge' };
   }
   // .obsidian/ non-json or json-parse-failure → spec falls back to
   // server-wins (`syncFileDown`); we return accept-server. The caller

@@ -53,7 +53,7 @@ export class HostPool {
 
   /** Current hostname (no scheme, no path). */
   get currentHost(): string {
-    return this._hosts[this.idx]!;
+    return this._hosts[this.idx];
   }
 
   /** Read-only view of the host list — useful for diagnostics. */

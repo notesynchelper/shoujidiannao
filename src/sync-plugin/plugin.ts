@@ -87,7 +87,7 @@ export class SyncPlugin {
     this.running = true;
     try {
       // Coalesce: let any synchronous-arriving callers join this run.
-      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
       let more = true;
       while (more) {
         try {
@@ -100,7 +100,7 @@ export class SyncPlugin {
         this.queued = false;
         // Drain the deferred request; recursion is bounded by `running`.
         // Use setImmediate so the call stack doesn't grow.
-        setTimeout(() => void this.requestSync(), 0);
+        window.setTimeout(() => void this.requestSync(), 0);
       }
     } finally {
       this.running = false;
@@ -174,7 +174,7 @@ export class SyncPlugin {
       this.state.serverFiles.set(frame.path, { ...frame });
       // Remove any stale queued frame for this path.
       for (let i = 0; i < this.state.newServerFiles.length; i++) {
-        if (this.state.newServerFiles[i]!.path === frame.path) {
+        if (this.state.newServerFiles[i].path === frame.path) {
           this.state.newServerFiles.splice(i, 1);
           i--;
         }

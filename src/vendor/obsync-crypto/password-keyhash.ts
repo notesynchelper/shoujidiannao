@@ -14,6 +14,7 @@
  *   - analysis/desktop/app.readable.js:L48493-L48505 (`yk`)
  */
 
+// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
 import { createHash } from 'node:crypto';
 import { scryptDerive } from './scrypt.js';
 import { hkdfDerive, INFO_KEY_HASH } from './hkdf.js';

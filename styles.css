@@ -1,0 +1,68 @@
+/*
+ * Plugin styles. Inline element styles are intentionally avoided (theming +
+ * maintainability); UI components attach the classes below instead.
+ */
+
+/* ---- Device pairing block (src/pair/pair-block.ts) ---- */
+
+.obsync-pair-code {
+  font-size: 32px;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+.obsync-pair-code-input {
+  font-size: 24px;
+  letter-spacing: 0.15em;
+  width: 12em;
+}
+
+.obsync-pair-info {
+  font-weight: bold;
+}
+
+.obsync-pair-error-text {
+  color: var(--text-error, #c33);
+}
+
+.obsync-pair-sas-text {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.obsync-pair-sas-warning {
+  color: var(--text-error, #c33);
+  font-weight: 600;
+}
+
+.obsync-pair-reject {
+  margin-left: 1em;
+}
+
+/* ---- WeChat require-login view (src/settings/require-login-view.ts) ---- */
+
+.obsync-require-login__code-value {
+  font-size: 2em;
+  letter-spacing: 0.25em;
+  font-family: monospace;
+  margin: 0.5em 0;
+  user-select: all;
+}
+
+.obsync-paste-token__warn {
+  color: var(--text-error, #c00);
+}
+
+.obsync-paste-token__field {
+  display: block;
+  margin-top: 0.5em;
+}
+
+/* ---- Excluded-folders modal (main.ts) ---- */
+
+.obsync-exclude-empty {
+  color: var(--text-muted);
+}

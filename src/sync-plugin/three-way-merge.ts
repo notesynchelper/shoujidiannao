@@ -35,7 +35,7 @@ export function threeWayMerge(base: string, ours: string, theirs: string): strin
     dmp.diff_cleanupEfficiency(diffs);
   }
   const patches = dmp.patch_make(base, diffs);
-  const [merged, results] = dmp.patch_apply(patches, theirs) as [string, boolean[]];
+  const [merged, results] = dmp.patch_apply(patches, theirs);
   const anyFailed = Array.isArray(results) && results.some((ok) => ok === false);
   if (anyFailed) {
     // Spec: client ignores results, but the upstream `B` function in

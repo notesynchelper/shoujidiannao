@@ -92,13 +92,13 @@ export class PairBlock {
 
   private renderD1Idle(): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-d1-idle';
-    const title = document.createElement('h3');
+    const title = activeDocument.createElement('h3');
     title.textContent = '添加新设备';
-    const help = document.createElement('p');
+    const help = activeDocument.createElement('p');
     help.textContent = '点击下方按钮生成 6 位配对码，在新设备的同步设置里输入这段码。';
-    const btn = document.createElement('button');
+    const btn = activeDocument.createElement('button');
     btn.textContent = '添加新设备';
     btn.addEventListener('click', () => {
       void this.startD1();
@@ -149,7 +149,7 @@ export class PairBlock {
       case 'sealed':
         this.renderInfo('✓ 已发送密钥。等待新设备完成同步');
         // 3s auto-reset
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (this.mounted) this.renderD1Idle();
         }, 3000);
         return;
@@ -164,20 +164,16 @@ export class PairBlock {
 
   private renderD1CodeDisplayed(pair_code: string): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-d1-code';
-    const code = document.createElement('div');
+    const code = activeDocument.createElement('div');
     code.className = 'obsync-pair-code';
     code.textContent = pair_code;
-    code.style.fontSize = '32px';
-    code.style.fontWeight = 'bold';
-    code.style.letterSpacing = '0.15em';
-    code.style.textAlign = 'center';
 
-    const help = document.createElement('p');
+    const help = activeDocument.createElement('p');
     help.textContent = '在新设备的同步设置里输入上方 6 位码。等待新设备输入...';
 
-    const cancel = document.createElement('button');
+    const cancel = activeDocument.createElement('button');
     cancel.textContent = '取消';
     cancel.addEventListener('click', () => void this.d1?.cancel());
 
@@ -187,12 +183,12 @@ export class PairBlock {
 
   private renderD1Error(msg: string): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-error';
-    const err = document.createElement('p');
-    err.style.color = 'var(--text-error, #c33)';
+    const err = activeDocument.createElement('p');
+    err.className = 'obsync-pair-error-text';
     err.textContent = `错误：${msg}`;
-    const retry = document.createElement('button');
+    const retry = activeDocument.createElement('button');
     retry.textContent = '重试';
     retry.addEventListener('click', () => this.renderD1Idle());
     wrap.append(err, retry);
@@ -205,22 +201,20 @@ export class PairBlock {
 
   private renderD2PromptCode(): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-d2-prompt';
-    const title = document.createElement('h3');
+    const title = activeDocument.createElement('h3');
     title.textContent = '从已登录设备导入密钥';
-    const help = document.createElement('p');
+    const help = activeDocument.createElement('p');
     help.textContent = '此设备需要从已登录设备导入密钥。请在另一台已登录设备的同步设置里点 "添加新设备"，把生成的 6 位码填到这里。';
 
-    const input = document.createElement('input');
+    const input = activeDocument.createElement('input');
+    input.className = 'obsync-pair-code-input';
     input.type = 'text';
     input.maxLength = 6;
     input.placeholder = '6 位配对码';
-    input.style.fontSize = '24px';
-    input.style.letterSpacing = '0.15em';
-    input.style.width = '12em';
 
-    const submit = document.createElement('button');
+    const submit = activeDocument.createElement('button');
     submit.textContent = '提交';
     submit.addEventListener('click', () => {
       void this.startD2(input.value.trim());
@@ -265,7 +259,7 @@ export class PairBlock {
       case 'ready':
         this.renderInfo('✓ 已成功导入。同步即将开始');
         void this.device2?.onPaired(s.masterKey, s.vault).catch(() => undefined);
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (this.mounted) this.unmount();
         }, 5000);
         return;
@@ -277,12 +271,12 @@ export class PairBlock {
 
   private renderD2Error(msg: string): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-error';
-    const err = document.createElement('p');
-    err.style.color = 'var(--text-error, #c33)';
+    const err = activeDocument.createElement('p');
+    err.className = 'obsync-pair-error-text';
     err.textContent = `错误：${msg}`;
-    const retry = document.createElement('button');
+    const retry = activeDocument.createElement('button');
     retry.textContent = '重试';
     retry.addEventListener('click', () => this.renderD2PromptCode());
     wrap.append(err, retry);
@@ -295,16 +289,16 @@ export class PairBlock {
 
   private renderSpinner(text: string): void {
     this.container.innerHTML = '';
-    const p = document.createElement('p');
+    const p = activeDocument.createElement('p');
     p.textContent = text;
     this.container.appendChild(p);
   }
 
   private renderInfo(text: string): void {
     this.container.innerHTML = '';
-    const p = document.createElement('p');
+    const p = activeDocument.createElement('p');
+    p.className = 'obsync-pair-info';
     p.textContent = text;
-    p.style.fontWeight = 'bold';
     this.container.appendChild(p);
   }
 
@@ -315,29 +309,24 @@ export class PairBlock {
     onReject: () => void,
   ): void {
     this.container.innerHTML = '';
-    const wrap = document.createElement('div');
+    const wrap = activeDocument.createElement('div');
     wrap.className = 'obsync-pair-block obsync-pair-sas';
 
-    const sas = document.createElement('div');
+    const sas = activeDocument.createElement('div');
     sas.className = 'obsync-pair-sas-text';
     sas.textContent = sasText;
-    sas.style.fontSize = '32px';
-    sas.style.fontWeight = 'bold';
-    sas.style.textAlign = 'center';
-    sas.style.letterSpacing = '0.1em';
 
-    const help = document.createElement('p');
+    const help = activeDocument.createElement('p');
+    help.className = 'obsync-pair-sas-warning';
     help.textContent = helpText;
-    help.style.color = 'var(--text-error, #c33)';
-    help.style.fontWeight = '600';
 
-    const ok = document.createElement('button');
+    const ok = activeDocument.createElement('button');
     ok.textContent = '一致，确认';
     ok.addEventListener('click', onConfirm);
 
-    const no = document.createElement('button');
+    const no = activeDocument.createElement('button');
+    no.className = 'obsync-pair-reject';
     no.textContent = '不一致，拒绝';
-    no.style.marginLeft = '1em';
     no.addEventListener('click', onReject);
 
     wrap.append(sas, help, ok, no);

@@ -37,7 +37,7 @@ export class JustPushedRing {
    */
   match(frame: Pick<JustPushedEntry, 'path' | 'folder' | 'deleted' | 'mtime' | 'hash'>): boolean {
     for (let i = 0; i < this.buf.length; i++) {
-      const e = this.buf[i]!;
+      const e = this.buf[i];
       if (
         e.path === frame.path &&
         e.folder === frame.folder &&
@@ -61,7 +61,7 @@ export class JustPushedRing {
    */
   matchPath(path: string, mtime: number, hash: string): boolean {
     for (let i = 0; i < this.buf.length; i++) {
-      const e = this.buf[i]!;
+      const e = this.buf[i];
       if (e.path === path && e.hash === hash) {
         if (mtime !== 0 && e.mtime !== 0 && e.mtime !== mtime) continue;
         // Note: we don't consume here — Phase D may re-evaluate this

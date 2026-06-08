@@ -25,6 +25,7 @@
  *   - analysis/desktop/modules/crypto/encryption-provider.js:L42-L58
  */
 
+// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
 import { randomBytes } from 'node:crypto';
 import { hkdfDerive, INFO_KEY_HASH } from './hkdf.js';
 import { bytesToHex, utf8Encode } from './utils.js';

@@ -51,7 +51,7 @@ export interface PairDevice2Options {
 
 function b64u(bytes: Uint8Array): string {
   let s = '';
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]!);
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 function fromB64u(s: string): Uint8Array {
@@ -70,7 +70,7 @@ export class PairDevice2 {
   private readonly emit: (s: D2State) => void;
 
   private state: D2State = { phase: 'prompt_code' };
-  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollTimer: number | null = null;
   private cancelled = false;
 
   // private session material
@@ -202,7 +202,7 @@ export class PairDevice2 {
       size: 0,
       created: 0,
       size_quota: 0,
-    } as VaultMeta;
+    };
   }
 
   private async revealP(): Promise<void> {
@@ -237,7 +237,7 @@ export class PairDevice2 {
       if (this.state.phase !== 'claiming' && this.state.phase !== 'decrypting') {
         return;
       }
-      this.pollTimer = setTimeout(() => {
+      this.pollTimer = window.setTimeout(() => {
         void tick();
       }, this.pollIntervalMs);
     };
@@ -246,7 +246,7 @@ export class PairDevice2 {
 
   private stopPolling(): void {
     if (this.pollTimer) {
-      clearTimeout(this.pollTimer);
+      window.clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
   }

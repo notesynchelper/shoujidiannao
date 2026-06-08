@@ -14,6 +14,7 @@
  *   - analysis/desktop/app.readable.js:L46614-L46651
  */
 
+// eslint-disable-next-line import/no-nodejs-modules -- vendored crypto snapshot; the released main.js bundles the pure-JS @noble equivalents, so the mobile runtime never loads node:crypto.
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const GCM_IV_LEN = 12;
